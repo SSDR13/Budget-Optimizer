@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RISK_PREFERENCES } from '../../utils/constants';
+import { useAuth } from '../../contexts/AuthContext';
 
 const STEPS = ['Income Setup', 'Risk Profile', 'All Set!'];
 
@@ -8,11 +9,32 @@ export default function Onboarding() {
     const [step, setStep] = useState(0);
     const [income, setIncome] = useState('');
     const [risk, setRisk] = useState<string>('moderate');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    const { user } = useAuth(); // Assuming you expose the firebase user here
 
-    const handleComplete = () => {
-        // TODO: Call API onboard endpoint
-        navigate('/dashboard');
+    const handleComplete = async () => {
+        setIsSubmitting(true);
+        try {
+            const token = await user?.getIdToken();
+            const response = await fetch('http://127.0.0.1:8000/api/users/onboard', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    monthlyIncome: Number(income),
+                    currency: "INR",
+                    riskPreference: risk
+                })
+            });
+            if (response.ok) navigate('/dashboard');
+        } catch (error) {
+            console.error("Onboarding failed", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -133,8 +155,8 @@ export default function Onboarding() {
                                 </p>
                             </div>
 
-                            <button onClick={handleComplete} className="btn-primary w-full py-3.5 text-lg">
-                                Go to Dashboard →
+                            <button onClick={handleComplete} disabled={isSubmitting} className="btn-primary w-full py-3.5 text-lg">
+                                {isSubmitting ? 'Setting up...' : 'Go to Dashboard →'}
                             </button>
                         </div>
                     )}

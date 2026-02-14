@@ -38,7 +38,7 @@ export default function Navbar() {
                         </div>
                         <div className="relative group">
                             <button className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-violet flex items-center justify-center text-white font-semibold text-sm">
-                                {user.displayName.charAt(0)}
+                                {user.displayName?.charAt(0) || 'U'}
                             </button>
                             {/* Dropdown */}
                             <div className="absolute right-0 top-12 w-48 glass-card p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">

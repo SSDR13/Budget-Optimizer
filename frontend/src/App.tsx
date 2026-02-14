@@ -1,69 +1,54 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import AppLayout from './components/layout/AppLayout';
-import LoadingSpinner from './components/layout/LoadingSpinner';
-import Landing from './components/landing/Landing';
 import Login from './components/auth/Login';
 import SignUp from './components/auth/SignUp';
 import Onboarding from './components/auth/Onboarding';
 import Dashboard from './components/dashboard/Dashboard';
-import TransactionList from './components/transactions/TransactionList';
 import HistoryView from './components/history/HistoryView';
 import Settings from './components/settings/Settings';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+    const { user, loading } = useAuth();
+    
+    if (loading) return <div className="min-h-screen bg-surface-900 flex items-center justify-center">Loading...</div>;
+    
+    if (!user) {
+        return <Navigate to="/login" />;
+    }
 
-  if (loading) {
+    return children;
+}
+
+function App() {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-950">
-        <LoadingSpinner size="lg" text="Loading..." />
-      </div>
+        <Router>
+            <AuthProvider>
+                <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route path="/" element={<Navigate to="/login" />} />
+
+                    {/* Protected Routes */}
+                    <Route path="/onboarding" element={
+                        <PrivateRoute><Onboarding /></PrivateRoute>
+                    } />
+                    
+                    <Route path="/dashboard" element={
+                        <PrivateRoute><Dashboard /></PrivateRoute>
+                    } />
+
+                    <Route path="/history" element={
+                        <PrivateRoute><HistoryView /></PrivateRoute>
+                    } />
+
+                    <Route path="/settings" element={
+                        <PrivateRoute><Settings /></PrivateRoute>
+                    } />
+                </Routes>
+            </AuthProvider>
+        </Router>
     );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
 }
 
-function AppRoutes() {
-  return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/onboarding" element={<Onboarding />} />
-
-      {/* Protected routes with app layout */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/transactions" element={<TransactionList />} />
-        <Route path="/history" element={<HistoryView />} />
-        <Route path="/settings" element={<Settings />} />
-      </Route>
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-}
-
-export default function App() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
-  );
-}
+export default App;
